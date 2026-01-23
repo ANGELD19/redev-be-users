@@ -5,7 +5,7 @@ from flask import Flask
 from flask_cors import CORS
 from flask_jwt_extended import jwt_required, JWTManager
 
-from src.application.auth_service import Auth
+from src.application.user_service import Auth
 
 
 

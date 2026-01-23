@@ -14,8 +14,8 @@ from flask_jwt_extended import create_access_token, get_jwt_identity, jwt_requir
 
 from src.infrastructure.repositories.mongodb.log_repository import LogRepository
 from src.infrastructure.repositories.mongodb.user_repository import UserRepository
-from src.domain.auth_schema import (
-    LoginSchema,
+from src.domain.user_schema import (
+    CreateUserSchema,
     
 )
 
@@ -34,15 +34,15 @@ user_repository = UserRepository()
 
 
 
-class Auth:
+class User:
     def __init__(self, app):      #Hace que las clases se inicien
         self.app = app              #(self) es un parametro obligatorio y es una referencia al objeto actual que se esta usando
                                     #app es la instacia de flask              
-    def login(self):
-        origen = "login"            #origen =: nos va a indicar en caso de que se presente un error saber en que parte la presenta
+    def CreateUserSchema(self):
+        origen = "CreateUser"            #origen =: nos va a indicar en caso de que se presente un error saber en que parte la presenta
         try: 
             data = request.get_json()
-            schema = LoginSchema()
+            schema = CreateUserSchema()
             schema.load(data)
 
             user = user_repository.get(email = data.get("email",""))
