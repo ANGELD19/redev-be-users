@@ -61,83 +61,37 @@ class UserRepository(MongodbRepository):
         _id = response.inserted_id  #inserted_id = es el ID que mongoDBle asigno al documento recien creado    #_id = se necesita para consultar el usuario recien creado
         return self.get(_id=ObjectId(_id)) #busca el documento recien creado en la base de datos y lo devuelve completo 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    def get_users(self, page, page_size, filters):
-        #Filtro por defecto: solo activos si no se especifica
-        if "is_active" not in filters:
-            filters["is_active"] = True
-        else:
-            if isinstance(filters["is_active"], str):
-               #isintance sirve para preguntar que valor es:¿El valor de is_active es un texto (string)?
-                filters["is_active"] = filters["is_active"].lower() == "true"
-
-        search_term = filters.pop("search", None)
-        #Sirve para guardar el texto que el usuario quiere buscar
-        query = dict(filters)
-        #Esto crea una copia del diccionario filters
-        #Que hace dict(filters) = Crea otro diccionario nuevo con el mismo contenido 
-        #query es el diccionario que se va a suar para consultar la base de datos
-        query = dict(filters)
-
-        if search_term:
-            query = {
-                "$and": [     #Sirve para decirle a MongoDB:"Cumple todas estas condiciones al mismo tiempo"
-                    query,
-                    {
-                        "$or": [    #Es un operador de MongoDB y significa "O"logico, se usa cuando basta con que se cumpla una condicion, no todas 
-                            {"first_name": {"$regex":search_term, "$options": "i"}},   #Buscar usuarios cuyo first_name contenga el texto que escribió el usuario sin importar mayúsculas o minúsculas
-                            {"middle_name": {"$regex":search_term, "$options": "i"}},  #"$regex" = permite buscar texto parcial
-                            {"last_name": {"$regex":search_term, "$options": "i"}},    #La [i] = significa ignorar mayuscula y minusculas
-                            {"second_last_name": {"$regex":search_term, "$options": "i"}},                       
-                        ]
-                    }
-                ]    
-            }
-
-        return self.get_all(  #get_all Hace:consulta a MongoDB, Aplica filtros, Aplica paginacion, Devuelve datos
-            page=page,
-            page_size=page_size,
-            details=self.add_details(),
-            **query
-        )
-    
-
-    def get_user(self, _id):
-        return self.get(
-            details=self.add_details(),
-            _id=ObjectId(_id))
+    def edit_user(self, user_id, data):
+        #Obtener usuario actual
+        existing_user = self.get(_id=ObjectId(user_id))
+        if not existing_user:
+            raise ValueError("Usuario no encontrado") #raise es fundamental para entender cómo Python maneja errores.
         
+        self.is_duplicated(user_id=user_id, email=data.get("email", existing_user.get("email")))
+        self.is_duplicated(user_id=user_id, document=data.get("document", existing_user.get("document")))
+
+
+        updated_user = {
+            "document_type": ObjectId(data.get("document_type")) if data.get("document_type") else existing_user["document_type"],
+            "document": data.get("document", existing_user["document"]),
+
+            "first_name": data.get("first_name", existing_user["first_name"]),
+            "middle_name": data.get("middle_name",existing_user.get("middle_name", "")),
+            "last_name": data.get("last_name", existing_user["last_name"]),
+            "second_last_name": data.get("last_name", existing_user.get("second_last_name", "")),
+
+            "password": existing_user["password"],
+            "cellphone": data.get("cellphone", existing_user.get("cellphone")),
+            "email": data.get("email", existing_user["email"]),
+            "address": data.get("address", existing_user["address"]),
+            "is_active": data.get("is_active", existing_user.get("is_active", True)),
+            "updated_at": datetime.datetime.now(),
+        }
+        #Upgrade
+        self.update(id=ObjectId(user_id), **updated_user) #Esta linea actualiza el usuario en la base de datos
+        #self.update = un metodo de repository, ejecuta un update en MongoDB
+        #id=ObjectId(user_id) = indica que usuario actualizar, user_id llega como string Mongo necesita ObjectId por eso se convierte
+        #**updated_user = Expande el diccionario updated_user en argumentos
+        return self.get(_id=ObjectId(user_id))
+    
+    
