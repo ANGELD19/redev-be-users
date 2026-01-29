@@ -10,12 +10,7 @@ COLLECTION_NAME = "users"
 
 class UserRepository(MongodbRepository):
     def __init__(self):
-        user = os.getenv("MONGO_DATABASE_USERNAME")
-        password = os.getenv("MONGO_DATABASE_PASSWORD")
-        cluster = os.getenv("MONGO_DATABASE_CLUSTER")
-        string_connection = f"mongodb+srv://{user}:{password}@{cluster}/"
         super().__init__(
-            string_connection,
             os.getenv("MONGO_DATABASE_NAME"),
             COLLECTION_NAME,
         )
@@ -35,7 +30,7 @@ class UserRepository(MongodbRepository):
         #plain_password.encode('utf-8') = #code = convierte texto (str) en bytes porque bcrypt solo trabaja con bytes
         data = {
             
-            "document_type": ObjectId(data.get("document_type")),
+            #"document_type": ObjectId(data.get("document_type")),
             "document": data.get("document"),
             
             "first_name": data.get("first_name"),
@@ -72,7 +67,7 @@ class UserRepository(MongodbRepository):
 
 
         updated_user = {
-            "document_type": ObjectId(data.get("document_type")) if data.get("document_type") else existing_user["document_type"],
+            "document_type": data.get("document_type") if data.get("document_type") else existing_user["document_type"],
             "document": data.get("document", existing_user["document"]),
 
             "first_name": data.get("first_name", existing_user["first_name"]),
@@ -83,7 +78,7 @@ class UserRepository(MongodbRepository):
             "password": existing_user["password"],
             "cellphone": data.get("cellphone", existing_user.get("cellphone")),
             "email": data.get("email", existing_user["email"]),
-            "address": data.get("address", existing_user["address"]),
+            "address": data.get("address", existing_user.get("address")),
             "is_active": data.get("is_active", existing_user.get("is_active", True)),
             "updated_at": datetime.datetime.now(),
         }
@@ -94,4 +89,15 @@ class UserRepository(MongodbRepository):
         #**updated_user = Expande el diccionario updated_user en argumentos
         return self.get(_id=ObjectId(user_id))
     
-    
+    def is_duplicated(self, user_id=None, **kwargs):
+        clean_kwargs = {k: v for k, v in kwargs.items() if v is not None}
+        if not clean_kwargs:
+            return
+        response = self.get(**clean_kwargs)
+        if response and (user_id is None or str(response["_id"]) != str(user_id)):
+            # Solo mostrar los campos que causaron el duplicado
+            datos = {k: v for k, v in response.items() if k in clean_kwargs}
+            datos_str = json.dumps(datos, default=str, ensure_ascii=False)
+            raise ValueError(
+                f"No se puede crear o editar: ya existe un registro con los datos: {datos_str}"
+            )

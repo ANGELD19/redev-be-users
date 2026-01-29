@@ -16,4 +16,11 @@ if os.getenv("FLASK_ENV") == "development":
 client = MongoClient(MONGO_URI, maxPoolSize=100)
 
 def get_mongo_client():
-    return client
+    user = os.getenv("MONGO_DATABASE_USERNAME")
+    password = os.getenv("MONGO_DATABASE_PASSWORD")
+    cluster = os.getenv("MONGO_DATABASE_CLUSTER")
+    uri = f"mongodb+srv://{user}:{password}@{cluster}/"
+    return MongoClient(uri)
+
+
+

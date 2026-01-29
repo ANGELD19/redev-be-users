@@ -54,7 +54,7 @@ class User:
 
             log_repository.create_log(origen, "exitoso", 200, user_id=user.get("_id")) 
             return json.loads(json_util.dumps(response)),200 #json_util.dumps(response) = convierte el diccionario response a JSON compatible con MongoDB
-            #json.loads = convierte ese JSON en un diccionario python estandar
+                                                             #json.loads = convierte ese JSON en un diccionario python estandar
 
         except ValidationError as e:
             return json.loads(json_util.dumps({
@@ -68,11 +68,11 @@ class User:
             })), 400
 
         except Exception as e:
-            return handle_general_error(e, origen, 500) 
+            return handle_general_error(e, origen) 
             
     def edit(self, user_id):
         origen = "Editar Usuario"
-        try:   #todo lo que este adentro se intenta ejecutar y si falla algo -> se captura el error 
+        try:                                 #todo lo que este adentro se intenta ejecutar y si falla algo -> se captura el error 
             data = request.get_json()        #lee el JSON enviado por el cliente 
             data["_id"] = user_id         
             schema = UserEditSchema()
